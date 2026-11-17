@@ -1,0 +1,19 @@
+name: ZhanluQuota
+options:
+  bundleIdPrefix: com.zhanludaddy
+  deploymentTarget:
+    iOS: "16.0"
+targets:
+  ZhanluQuota:
+    type: application
+    platform: iOS
+    sources:
+      - path: Sources
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.zhanludaddy.quota
+        INFOPLIST_FILE: Resources/Info.plist
+        GENERATE_INFOPLIST_FILE: NO
+        SWIFT_VERSION: "5.9"
+        CODE_SIGNING_ALLOWED: NO
+        TARGETED_DEVICE_FAMILY: "1,2"

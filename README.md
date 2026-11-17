@@ -1,4 +1,4 @@
-# 湛卢额度 · iOS 版
+# ZhanluQuota · iOS 版
 
 把 PC 端方案C（保存 key + 查询湛卢额度）搬到 iPhone。SwiftUI 原生、零第三方依赖，未签名 IPA，配合 LiveContainer 侧载。
 
@@ -10,9 +10,6 @@
 - 显示：剩余 / 总额 / 已用 / 剩余百分比 + 最后更新时间
 - 数据：JSON 存本机 Documents/zhanlu_keys.json，与 PC 端同结构
 
-网关与 endpoint 与 PC 完全一致：
-- 内网：`http://rdcloud.4c.hq.cmcc/cmdevops-aiplus-agent-gateway/aigateway/gateway/api/v1/external-ide/budget-info`
-- 移动云：`https://ecloud.10086.cn/api/query/aigateway/gateway/api/v1/external-ide/budget-info`
 
 ## 云编译出 IPA（零成本）
 

@@ -7,7 +7,6 @@ struct KeyEditView: View {
 
     @State private var name = ""
     @State private var key = ""
-    @State private var mode: GatewayMode = .cloud
     @State private var testing = false
     @State private var testResult: String?
 
@@ -25,12 +24,8 @@ struct KeyEditView: View {
                         if let s = UIPasteboard.general.string { key = s.trimmingCharacters(in: .whitespacesAndNewlines) }
                     }
                 }
-                Section("网关模式") {
-                    Picker("模式", selection: $mode) {
-                        ForEach(GatewayMode.allCases) { Text($0.label).tag($0) }
-                    }
-                    .pickerStyle(.segmented)
-                    Text(mode.baseURL).font(.caption2).foregroundColor(.secondary)
+                Section("网关") {
+                    Text(Gateway.baseURL).font(.caption2).foregroundColor(.secondary)
                 }
                 if let r = testResult {
                     Section("试查询结果") { Text(r).font(.caption) }
@@ -43,10 +38,9 @@ struct KeyEditView: View {
                 }
                 ToolbarItem(placement: .confirmationAction) {
                     Button("保存") {
-                        var k = existing ?? ZKey(name: name, key: key, mode: mode)
+                        var k = existing ?? ZKey(name: name, key: key)
                         k.name = name.isEmpty ? "未命名" : name
                         k.key = key.trimmingCharacters(in: .whitespacesAndNewlines)
-                        k.mode = mode
                         store.upsert(k)
                         dismiss()
                     }
@@ -58,7 +52,7 @@ struct KeyEditView: View {
                         testResult = nil
                         Task {
                             do {
-                                let q = try await QuotaService.query(key: key, mode: mode)
+                                let q = try await QuotaService.query(key: key)
                                 testResult = "✅ 剩余 \(fmt(q.remaining)) / 总额 \(fmt(q.maxBudget))"
                             } catch {
                                 testResult = "❌ \(error.localizedDescription)"
@@ -76,7 +70,7 @@ struct KeyEditView: View {
             }
             .onAppear {
                 if let e = existing {
-                    name = e.name; key = e.key; mode = e.mode
+                    name = e.name; key = e.key
                 }
             }
         }

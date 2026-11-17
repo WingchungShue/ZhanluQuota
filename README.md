@@ -5,14 +5,15 @@
 ## 功能
 
 - 多 key 管理：添加 / 编辑 / 删除 / 剪贴板粘贴，名称+掩码显示
-- 双模式：每个 key 各自选「内网」或「移动云」
 - 查询：左滑单查、顶部「全部查询」批量、下拉刷新、保存前试查询
+- 模型列表：选任意 key 拉取 `/v1/models` 模型目录（字母序）
 - 显示：剩余 / 总额 / 已用 / 剩余百分比 + 最后更新时间
+- App 图标 = PC ZhanluTools 同款；桌面名称 ZhanluQuota
 - 数据：JSON 存本机 Documents/zhanlu_keys.json，与 PC 端同结构
 
-网关与 endpoint 与 PC 完全一致：
-- 内网：`http://rdcloud.4c.hq.cmcc/cmdevops-aiplus-agent-gateway/aigateway/gateway/api/v1/external-ide/budget-info`
-- 移动云：`https://ecloud.10086.cn/api/query/aigateway/gateway/api/v1/external-ide/budget-info`
+网关只走移动云（公网，iOS 查不了内网 HTTP）：
+- 额度：`https://ecloud.10086.cn/api/query/aigateway/gateway/api/v1/external-ide/budget-info`
+- 模型：`https://ecloud.10086.cn/api/query/aigateway/v1/models`
 
 ## 云编译出 IPA（零成本）
 

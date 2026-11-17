@@ -40,7 +40,7 @@ final class KeyStore: ObservableObject {
     func query(_ k: ZKey) async {
         await MainActor.run { _ = querying.insert(k.id) }
         do {
-            let q = try await QuotaService.query(key: k.key, mode: k.mode)
+            let q = try await QuotaService.query(key: k.key)
             await MainActor.run { update(k) { $0.quota = q; $0.lastError = nil; $0.lastTime = Date() } }
         } catch {
             await MainActor.run { update(k) { $0.lastError = error.localizedDescription; $0.lastTime = Date() } }

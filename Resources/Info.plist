@@ -10,8 +10,10 @@
 	<string>$(PRODUCT_BUNDLE_IDENTIFIER)</string>
 	<key>CFBundleInfoDictionaryVersion</key>
 	<string>6.0</string>
+	<key>CFBundleDisplayName</key>
+	<string>ZhanluQuota</string>
 	<key>CFBundleName</key>
-	<string>湛卢额度</string>
+	<string>ZhanluQuota</string>
 	<key>CFBundlePackageType</key>
 	<string>APPL</string>
 	<key>CFBundleShortVersionString</key>

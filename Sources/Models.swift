@@ -1,18 +1,10 @@
 import Foundation
 
-/// 网关模式：与 PC 端方案A/方案C 的双模式一致
-enum GatewayMode: String, Codable, CaseIterable, Identifiable {
-    case lan, cloud
-    var id: String { rawValue }
-    var label: String { self == .lan ? "内网" : "移动云" }
-    var baseURL: String {
-        switch self {
-        case .lan:
-            return "http://rdcloud.4c.hq.cmcc/cmdevops-aiplus-agent-gateway/aigateway"
-        case .cloud:
-            return "https://ecloud.10086.cn/api/query/aigateway"
-        }
-    }
+/// 网关：移动云（公网）。内网 HTTP 在 iOS 上不可达，不做内网模式。
+enum Gateway {
+    static let baseURL = "https://ecloud.10086.cn/api/query/aigateway"
+    static let modelsURL = baseURL + "/v1/models"
+    static let authHeader = "Authorization"
 }
 
 /// 一次额度查询结果（PC 端 budget_fields 同款，缺省值按公式兜底）
@@ -53,7 +45,6 @@ struct ZKey: Identifiable, Codable {
     var id = UUID()
     var name: String
     var key: String
-    var mode: GatewayMode = .cloud
     var quota: QuotaResult?
     var lastTime: Date?
     var lastError: String?
@@ -62,4 +53,9 @@ struct ZKey: Identifiable, Codable {
         guard key.count > 14 else { return key }
         return "\(key.prefix(10))…\(key.suffix(4))"
     }
+}
+
+/// 模型条目（GET /v1/models 返回）
+struct ModelItem: Identifiable, Codable {
+    var id: String
 }

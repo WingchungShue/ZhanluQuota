@@ -1,4 +1,4 @@
-# 湛卢额度 · iOS 版
+# ZhanluQuota · iOS 版
 
 把 PC 端方案C（保存 key + 查询湛卢额度）搬到 iPhone。SwiftUI 原生、零第三方依赖，未签名 IPA，配合 LiveContainer 侧载。
 
@@ -11,9 +11,6 @@
 - App 图标 = PC ZhanluTools 同款；桌面名称 ZhanluQuota
 - 数据：JSON 存本机 Documents/zhanlu_keys.json，与 PC 端同结构
 
-网关只走移动云（公网，iOS 查不了内网 HTTP）：
-- 额度：`https://ecloud.10086.cn/api/query/aigateway/gateway/api/v1/external-ide/budget-info`
-- 模型：`https://ecloud.10086.cn/api/query/aigateway/v1/models`
 
 ## 云编译出 IPA（零成本）
 

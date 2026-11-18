@@ -4,6 +4,7 @@ import Foundation
 final class KeyStore: ObservableObject {
     @Published private(set) var keys: [ZKey] = []
     @Published private(set) var querying: Set<UUID> = []
+    @Published private(set) var batchRunning = false
 
     private var fileURL: URL {
         let dir = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
@@ -41,17 +42,29 @@ final class KeyStore: ObservableObject {
         await MainActor.run { _ = querying.insert(k.id) }
         do {
             let q = try await QuotaService.query(key: k.key)
-            await MainActor.run { update(k) { $0.quota = q; $0.lastError = nil; $0.lastTime = Date() } }
+            await MainActor.run {
+                UINotificationFeedbackGenerator().notificationOccurred(.success)
+                update(k) { $0.quota = q; $0.lastError = nil; $0.lastTime = Date() }
+            }
         } catch {
-            await MainActor.run { update(k) { $0.lastError = error.localizedDescription; $0.lastTime = Date() } }
+            await MainActor.run {
+                UINotificationFeedbackGenerator().notificationOccurred(.error)
+                update(k) { $0.lastError = error.localizedDescription; $0.lastTime = Date() }
+            }
         }
         await MainActor.run { _ = querying.remove(k.id) }
     }
 
+    /// 并行查询全部（比串行快数倍）
     func queryAll() async {
-        for k in keys {
-            await query(k)
+        await MainActor.run { batchRunning = true }
+        await withTaskGroup(of: Void.self) { group in
+            for k in keys {
+                group.addTask { await self.query(k) }
+            }
+            _ = await group.waitForAll()
         }
+        await MainActor.run { batchRunning = false }
     }
 
     private func update(_ k: ZKey, _ mutate: (inout ZKey) -> Void) {

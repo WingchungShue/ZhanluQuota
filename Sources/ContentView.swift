@@ -1,4 +1,5 @@
 import SwiftUI
+import UIKit
 
 // MARK: - 设计系统（HIG 速查表取值）
 enum DS {
@@ -179,7 +180,8 @@ struct SummaryCard: View {
         }
         .padding(20)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(.background.secondary, in: RoundedRectangle(cornerRadius: 12))
+        .background(Color(UIColor.secondarySystemGroupedBackground),
+                    in: RoundedRectangle(cornerRadius: 12))
         .padding(.horizontal, 16)
         .padding(.vertical, 6)
     }

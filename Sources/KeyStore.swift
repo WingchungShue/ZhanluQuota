@@ -1,4 +1,5 @@
 import Foundation
+import UIKit
 
 /// key 库：JSON 存 Documents/zhanlu_keys.json（与 PC 端 zhanlu_keys.json 同结构可互通）
 final class KeyStore: ObservableObject {

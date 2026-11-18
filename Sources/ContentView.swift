@@ -2,12 +2,6 @@ import SwiftUI
 
 // MARK: - 设计系统（HIG 速查表取值）
 enum DS {
-    /// 系统语义色（SwiftUI 直接用系统色，自动适配深浅色与增强对比）
-    static let green = Color.green
-    static let orange = Color.orange
-    static let red = Color.red
-    static let blue = Color.blue
-
     /// 剩余额度的语义色：>50% 绿 / 20~50% 橙 / <20% 红（不只靠颜色，还配图标）
     static func quotaColor(_ pct: Double?) -> Color {
         guard let p = pct else { return .secondary }
@@ -17,12 +11,26 @@ enum DS {
     }
 }
 
-// MARK: - 主列表
+// MARK: - 根：底部双页签（key / 模型）
 struct ContentView: View {
+    @StateObject private var store = KeyStore()
+
+    var body: some View {
+        TabView {
+            KeysView()
+                .tabItem { Label("Key", systemImage: "key.horizontal") }
+            ModelsListView(store: store)
+                .tabItem { Label("模型", systemImage: "list.bullet") }
+        }
+        .environmentObject(store)
+    }
+}
+
+// MARK: - 页签1：key 管理 + 额度
+struct KeysView: View {
     @EnvironmentObject var store: KeyStore
     @State private var showAdd = false
     @State private var editing: ZKey?
-    @State private var showModels = false
 
     var body: some View {
         NavigationStack {
@@ -33,28 +41,19 @@ struct ContentView: View {
                     keyList
                 }
             }
-            .navigationTitle("ZhanluQuota")
+            .navigationTitle("Key")
             .toolbar {
-                ToolbarItem(placement: .topBarLeading) {
-                    Button { showModels = true } label: {
-                        Label("模型列表", systemImage: "list.bullet")
-                    }
-                    .disabled(store.keys.isEmpty)
-                }
                 ToolbarItem(placement: .topBarTrailing) {
                     Button { showAdd = true } label: {
                         Label("添加 key", systemImage: "plus")
                     }
                 }
             }
-            .refreshable { await store.queryAll() }
             .sheet(isPresented: $showAdd) { KeyEditView(existing: nil) }
             .sheet(item: $editing) { k in KeyEditView(existing: k) }
-            .sheet(isPresented: $showModels) { ModelsListView(store: store) }
         }
     }
 
-    // MARK: 空状态：说明 + 主行动按钮一步可见（渐进式披露的最外层）
     private var emptyState: some View {
         ContentUnavailableView {
             Label("还没有 key", systemImage: "key.horizontal")
@@ -71,10 +70,8 @@ struct ContentView: View {
         }
     }
 
-    // MARK: key 列表
     private var keyList: some View {
         List {
-            // 总览卡：所有 key 剩余合计，主任务路径一步可见
             if store.keys.count > 1 {
                 Section {
                     SummaryCard(keys: store.keys)
@@ -95,30 +92,19 @@ struct ContentView: View {
                                 Label("删除", systemImage: "trash")
                             }
                         }
-                        .swipeActions(edge: .leading) {
-                            Button {
-                                Task { await store.query(k) }
-                            } label: {
-                                Label("查询", systemImage: "arrow.clockwise")
-                            }
-                            .tint(.green)
-                        }
                 }
             } footer: {
-                HStack {
-                    Text("下拉全部刷新 · 左滑单查 · 点行编辑")
-                    Spacer()
-                    if store.batchRunning {
-                        HStack(spacing: 6) {
-                            ProgressView().scaleEffect(0.7)
-                            Text("查询中").font(.caption)
-                        }
-                        .foregroundColor(.secondary)
+                if store.batchRunning {
+                    HStack(spacing: 6) {
+                        ProgressView().scaleEffect(0.7)
+                        Text("查询中…")
                     }
+                    .foregroundColor(.secondary)
                 }
             }
         }
         .listStyle(.insetGrouped)
+        .refreshable { await store.queryAll() }
     }
 }
 
@@ -126,9 +112,11 @@ struct ContentView: View {
 struct SummaryCard: View {
     let keys: [ZKey]
 
-    private var totalRemaining: Double? {
-        let vals = keys.compactMap { $0.quota?.remaining }
-        return vals.isEmpty ? nil : vals.reduce(0, +)
+    private var percent: Double? {
+        let total = keys.compactMap { $0.quota?.maxBudget }.reduce(0, +)
+        let remain = keys.compactMap { $0.quota?.remaining }.reduce(0, +)
+        guard total > 0 else { return nil }
+        return remain / total * 100
     }
 
     var body: some View {
@@ -158,15 +146,13 @@ struct SummaryCard: View {
         .padding(.vertical, 6)
     }
 
-    private var percent: Double? {
-        let total = keys.compactMap { $0.quota?.maxBudget }.reduce(0, +)
-        let remain = keys.compactMap { $0.quota?.remaining }.reduce(0, +)
-        guard total > 0 else { return nil }
-        return remain / total * 100
+    private var totalRemaining: Double? {
+        let vals = keys.compactMap { $0.quota?.remaining }
+        return vals.isEmpty ? nil : vals.reduce(0, +)
     }
 }
 
-// MARK: - key 行（剩余大数字为主视觉，其余渐进披露）
+// MARK: - key 行
 struct KeyRow: View {
     let key: ZKey
     let querying: Bool
@@ -211,7 +197,6 @@ struct KeyRow: View {
                             .foregroundColor(.secondary)
                     }
                 }
-                // 进度条：颜色+宽度双通道传达余量（不只靠颜色）
                 if let p = q.remainingPercent {
                     GeometryReader { geo in
                         ZStack(alignment: .leading) {
@@ -230,7 +215,7 @@ struct KeyRow: View {
                     .foregroundColor(.red)
                     .lineLimit(2)
             } else {
-                Text("未查询 · 左滑查询")
+                Text("下拉刷新查询额度")
                     .font(.caption)
                     .foregroundColor(.secondary)
             }
@@ -239,15 +224,15 @@ struct KeyRow: View {
     }
 }
 
-// MARK: - 模型列表页
+// MARK: - 页签2：模型列表（选 key → 刷新拉取）
 struct ModelsListView: View {
     @ObservedObject var store: KeyStore
-    @Environment(\.dismiss) private var dismiss
     @State private var loading = false
     @State private var models: [ModelItem] = []
     @State private var err: String?
     @State private var selectedKey: UUID?
     @State private var searchText = ""
+    @State private var loadedFor: UUID?
 
     private var filtered: [ModelItem] {
         searchText.isEmpty ? models : models.filter { $0.id.localizedCaseInsensitiveContains(searchText) }
@@ -258,22 +243,20 @@ struct ModelsListView: View {
             Group {
                 if store.keys.isEmpty {
                     ContentUnavailableView("没有 key", systemImage: "key.horizontal",
-                                           description: Text("先添加 key 再拉取模型列表"))
+                                           description: Text("先在 Key 页添加 key\n再回来拉取模型列表"))
                 } else {
                     list
                 }
             }
-            .navigationTitle("模型列表")
-            .navigationBarTitleDisplayMode(.inline)
+            .navigationTitle("模型")
             .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
-                    Button("关闭") { dismiss() }
-                }
-                ToolbarItem(placement: .confirmationAction) {
+                ToolbarItem(placement: .topBarTrailing) {
                     Button {
                         load()
                     } label: {
-                        if loading { ProgressView() } else { Image(systemName: "arrow.clockwise") }
+                        if loading { ProgressView() } else {
+                            Label("刷新", systemImage: "arrow.clockwise")
+                        }
                     }
                     .disabled(selectedKey == nil || loading)
                 }
@@ -314,15 +297,16 @@ struct ModelsListView: View {
         }
         .listStyle(.insetGrouped)
         .searchable(text: $searchText, prompt: "搜索模型")
+        .refreshable { load() }
         .onChange(of: selectedKey) { _ in
-            if !models.isEmpty { load() }
+            if let kid = selectedKey, kid != loadedFor, !models.isEmpty { load() }
         }
     }
 
     private func load() {
         guard let kid = selectedKey,
               let k = store.keys.first(where: { $0.id == kid }) else { return }
-        loading = true; err = nil; models = []
+        loading = true; err = nil; models = []; loadedFor = kid
         Task {
             do {
                 models = try await QuotaService.listModels(key: k.key)

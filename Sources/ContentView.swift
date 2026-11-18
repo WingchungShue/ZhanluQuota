@@ -20,7 +20,7 @@ struct ContentView: View {
             KeysView()
                 .tabItem { Label("Key", systemImage: "key.horizontal") }
             ModelsListView(store: store)
-                .tabItem { Label("模型", systemImage: "list.bullet") }
+                .tabItem { Label("Model", systemImage: "list.bullet") }
         }
         .environmentObject(store)
     }
@@ -43,10 +43,22 @@ struct KeysView: View {
             }
             .navigationTitle("Key")
             .toolbar {
-                ToolbarItem(placement: .topBarTrailing) {
+                ToolbarItem(placement: .topBarLeading) {
                     Button { showAdd = true } label: {
                         Label("添加 key", systemImage: "plus")
                     }
+                }
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button {
+                        Task { await store.queryAll() }
+                    } label: {
+                        if store.batchRunning {
+                            ProgressView()
+                        } else {
+                            Label("刷新额度", systemImage: "arrow.clockwise")
+                        }
+                    }
+                    .disabled(store.keys.isEmpty || store.batchRunning)
                 }
             }
             .sheet(isPresented: $showAdd) { KeyEditView(existing: nil) }
@@ -248,7 +260,7 @@ struct ModelsListView: View {
                     list
                 }
             }
-            .navigationTitle("模型")
+            .navigationTitle("Model")
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
                     Button {

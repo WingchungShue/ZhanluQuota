@@ -2,7 +2,7 @@ name: ZhanluQuota
 options:
   bundleIdPrefix: com.zhanludaddy
   deploymentTarget:
-    iOS: "17.0"
+    iOS: "15.0"
 targets:
   ZhanluQuota:
     type: application

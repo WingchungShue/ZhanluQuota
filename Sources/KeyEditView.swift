@@ -13,7 +13,7 @@ struct KeyEditView: View {
     private var keyTrimmed: String { key.trimmingCharacters(in: .whitespacesAndNewlines) }
 
     var body: some View {
-        NavigationStack {
+        NavigationView {
             Form {
                 Section {
                     TextField("名称（本机 / 同事A）", text: $name)
@@ -94,6 +94,7 @@ struct KeyEditView: View {
                 }
             }
         }
+        .navigationViewStyle(.stack)
     }
 
     private func test() {

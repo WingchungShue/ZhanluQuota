@@ -11,6 +11,39 @@ enum DS {
     }
 }
 
+// MARK: - 空状态视图（iOS 15 兼容，替代 ContentUnavailableView）
+struct EmptyStateView: View {
+    let icon: String
+    let title: String
+    let message: String
+    var actionTitle: String?
+    var action: (() -> Void)?
+
+    var body: some View {
+        VStack(spacing: 12) {
+            Image(systemName: icon)
+                .font(.system(size: 44))
+                .foregroundColor(.secondary)
+            Text(title)
+                .font(.title3.weight(.semibold))
+            Text(message)
+                .font(.subheadline)
+                .foregroundColor(.secondary)
+                .multilineTextAlignment(.center)
+            if let actionTitle = actionTitle, let action = action {
+                Button(action: action) {
+                    Text(actionTitle)
+                        .fontWeight(.semibold)
+                }
+                .buttonStyle(.borderedProminent)
+                .padding(.top, 6)
+            }
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .padding(32)
+    }
+}
+
 // MARK: - 根：底部双页签（key / 模型）
 struct ContentView: View {
     @StateObject private var store = KeyStore()
@@ -33,7 +66,7 @@ struct KeysView: View {
     @State private var editing: ZKey?
 
     var body: some View {
-        NavigationStack {
+        NavigationView {
             Group {
                 if store.keys.isEmpty {
                     emptyState
@@ -43,12 +76,12 @@ struct KeysView: View {
             }
             .navigationTitle("Key")
             .toolbar {
-                ToolbarItem(placement: .topBarLeading) {
+                ToolbarItem(placement: .navigationBarLeading) {
                     Button { showAdd = true } label: {
                         Label("添加 key", systemImage: "plus")
                     }
                 }
-                ToolbarItem(placement: .topBarTrailing) {
+                ToolbarItem(placement: .navigationBarTrailing) {
                     Button {
                         Task { await store.queryAll() }
                     } label: {
@@ -64,22 +97,15 @@ struct KeysView: View {
             .sheet(isPresented: $showAdd) { KeyEditView(existing: nil) }
             .sheet(item: $editing) { k in KeyEditView(existing: k) }
         }
+        .navigationViewStyle(.stack)
     }
 
     private var emptyState: some View {
-        ContentUnavailableView {
-            Label("还没有 key", systemImage: "key.horizontal")
-        } description: {
-            Text("先在 PC 端 ZhanluDaddy 抓取 sk- token\n再回到这里添加")
-        } actions: {
-            Button {
-                showAdd = true
-            } label: {
-                Text("添加第一个 key")
-                    .fontWeight(.semibold)
-            }
-            .buttonStyle(.borderedProminent)
-        }
+        EmptyStateView(icon: "key.horizontal",
+                       title: "还没有 key",
+                       message: "先在 PC 端 ZhanluDaddy 抓取 sk- token\n再回到这里添加",
+                       actionTitle: "添加第一个 key",
+                       action: { showAdd = true })
     }
 
     private var keyList: some View {
@@ -251,18 +277,19 @@ struct ModelsListView: View {
     }
 
     var body: some View {
-        NavigationStack {
+        NavigationView {
             Group {
                 if store.keys.isEmpty {
-                    ContentUnavailableView("没有 key", systemImage: "key.horizontal",
-                                           description: Text("先在 Key 页添加 key\n再回来拉取模型列表"))
+                    EmptyStateView(icon: "key.horizontal",
+                                   title: "没有 key",
+                                   message: "先在 Key 页添加 key\n再回来拉取模型列表")
                 } else {
                     list
                 }
             }
             .navigationTitle("Model")
             .toolbar {
-                ToolbarItem(placement: .topBarTrailing) {
+                ToolbarItem(placement: .navigationBarTrailing) {
                     Button {
                         load()
                     } label: {
@@ -275,6 +302,7 @@ struct ModelsListView: View {
             }
             .onAppear { if selectedKey == nil { selectedKey = store.keys.first?.id } }
         }
+        .navigationViewStyle(.stack)
     }
 
     private var list: some View {
